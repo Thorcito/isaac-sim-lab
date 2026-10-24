@@ -5,20 +5,18 @@ echo === Cambios a publicar ===
 git status --short
 git add -A
 git diff --cached --quiet
-if %errorlevel%==0 (
-    echo.
-    echo No hay cambios para publicar.
-    pause
-    exit /b 0
+if errorlevel 1 (
+    git commit -m "Actualizacion %date% %time%"
+) else (
+    echo No hay cambios nuevos; se suben los commits pendientes si los hay.
 )
-git commit -m "Actualizacion %date% %time%"
 git pull --rebase
 git push
-if %errorlevel%==0 (
-    echo.
-    echo Listo: cambios publicados. En Isaac Sim corre actualizar^(^)
-) else (
+if errorlevel 1 (
     echo.
     echo ERROR al publicar. Copia este mensaje y mandalo al chat.
+) else (
+    echo.
+    echo Listo: cambios publicados. En Isaac Sim corre actualizar^(^)
 )
 pause
