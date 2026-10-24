@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+# datos privados de proyectos: nunca al repo
+privado/
+*.secret.*

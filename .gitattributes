@@ -1,0 +1,6 @@
+# Archivos de texto con saltos de linea LF (Linux) aunque se editen en Windows
+* text=auto eol=lf
+*.bat text eol=crlf
+*.usd binary
+*.usdz binary
+*.png binary
