@@ -186,6 +186,53 @@ def prims(raiz="/"):
     return mostrar("\n".join(out) or "(escena vacia)", f"Prims: {raiz}", 900, 700)
 
 
+def codigo_ejemplo(nombre, abrir=3):
+    """Busca el codigo fuente de un Robotics Example y abre sus archivos. Ej: codigo_ejemplo("Hello World")"""
+    import omni.kit.app
+    from isaacsim.examples.browser import get_instance
+    ex = get_instance()._browser_model._examples
+    carpetas, encontrado = set(), None
+    for cat, items in ex.items():
+        items = items.values() if isinstance(items, dict) else items
+        for it in items:
+            n = str(getattr(it, "name", None) or getattr(it, "_name", "") or "")
+            if n.strip().lower() != nombre.strip().lower():
+                continue
+            encontrado = f"{cat} / {n}"
+            # las funciones que registro el ejemplo apuntan al archivo donde viven
+            for attr in dir(it):
+                if attr.startswith("__"):
+                    continue
+                try:
+                    v = getattr(it, attr)
+                    f = inspect.getsourcefile(v) if callable(v) else None
+                except Exception:
+                    f = None
+                if f and "examples" in f and "browser" not in f:
+                    carpetas.add(os.path.dirname(f))
+    # respaldo: buscar carpetas o archivos con el nombre (hello_world, ur10_palletizing...)
+    slug = re.sub(r"[^a-z0-9]+", "_", nombre.lower()).strip("_")
+    mgr = omni.kit.app.get_app().get_extension_manager()
+    if not carpetas:
+        for e in mgr.get_extensions():
+            if not e.get("enabled") or "example" not in e["name"]:
+                continue
+            for root, dirs, files in os.walk(mgr.get_extension_path(e["id"])):
+                if slug in os.path.basename(root).lower() or any(slug in f.lower() for f in files):
+                    carpetas.add(root)
+    archivos_py = sorted({os.path.join(c, f) for c in carpetas for f in os.listdir(c)
+                          if f.endswith(".py") and f != "__init__.py"})
+    resumen = [f"Ejemplo: {encontrado or '(no esta en el navegador; busqueda por nombre)'}",
+               "Carpetas:"] + [f"  {c}" for c in sorted(carpetas)] + ["Archivos .py:"] + [f"  {a}" for a in archivos_py]
+    if not archivos_py:
+        resumen.append("  (no encontre archivos: revisa el nombre exacto con inventario_ejemplos())")
+    # primero los archivos con el nombre del ejemplo (la logica), despues el resto
+    archivos_py.sort(key=lambda a: (slug not in os.path.basename(a).lower(), "extension" in a.lower(), a))
+    for a in archivos_py[:abrir]:
+        ver(a)
+    return mostrar("\n".join(resumen), f"Codigo: {nombre}", 900, 400)
+
+
 def escena():
     """Resumen de la escena abierta: unidades, fisica, cuerpos, robots, joints, camaras y luces."""
     import omni.usd, omni.timeline
@@ -248,7 +295,7 @@ def escena():
 
 def ayuda():
     """Lista las herramientas disponibles."""
-    fns = [actualizar, correr, mostrar, ver, archivos, guardar, diagnostico, inventario_ejemplos, inspeccionar, prims, escena, ayuda]
+    fns = [actualizar, correr, mostrar, ver, archivos, guardar, diagnostico, inventario_ejemplos, inspeccionar, prims, escena, codigo_ejemplo, ayuda]
     out = []
     for f in fns:
         out.append(f"{f.__name__}{inspect.signature(f)}\n    {(f.__doc__ or '').strip()}")

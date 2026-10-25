@@ -74,7 +74,13 @@ probar("prims(ruta inexistente)", lambda: prims("/NoExiste/123"), ventana_ok)
 # 11. escena
 probar("escena", escena, ventana_ok)
 
-# 12. ayuda
+# 12. codigo_ejemplo (abre 0 archivos para no llenar la pantalla)
+def _codigo():
+    w = codigo_ejemplo("Hello World", abrir=0)
+    return ventana_ok(w)
+probar("codigo_ejemplo", _codigo)
+
+# 13. ayuda
 probar("ayuda", ayuda, ventana_ok)
 
 ok = sum(r.startswith("OK") for r in resultados)
