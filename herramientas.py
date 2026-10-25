@@ -186,9 +186,69 @@ def prims(raiz="/"):
     return mostrar("\n".join(out) or "(escena vacia)", f"Prims: {raiz}", 900, 700)
 
 
+def escena():
+    """Resumen de la escena abierta: unidades, fisica, cuerpos, robots, joints, camaras y luces."""
+    import omni.usd, omni.timeline
+    from pxr import Usd, UsdGeom, UsdPhysics, UsdLux
+    stage = omni.usd.get_context().get_stage()
+    if stage is None:
+        return mostrar("No hay escena abierta", "Escena")
+    out = []
+    url = stage.GetRootLayer().identifier
+    out.append(f"ARCHIVO: {url}")
+    out.append(f"Unidades: {UsdGeom.GetStageMetersPerUnit(stage)} m por unidad | Eje arriba: {UsdGeom.GetStageUpAxis(stage)}")
+    tl = omni.timeline.get_timeline_interface()
+    out.append(f"Timeline: {'PLAY' if tl.is_playing() else 'detenido'} | t = {tl.get_current_time():.2f} s")
+
+    tipos = defaultdict(int)
+    escenas_fis, cuerpos, estaticos, robots, joints, camaras, luces = [], [], [], [], [], [], []
+    for p in stage.Traverse():
+        tipos[p.GetTypeName() or "(sin tipo)"] += 1
+        ruta = str(p.GetPath())
+        if p.IsA(UsdPhysics.Scene):
+            s = UsdPhysics.Scene(p)
+            g = s.GetGravityMagnitudeAttr().Get()
+            d = s.GetGravityDirectionAttr().Get()
+            hz = p.GetAttribute("physxScene:timeStepsPerSecond").Get() if p.HasAttribute("physxScene:timeStepsPerSecond") else None
+            gpu = p.GetAttribute("physxScene:enableGPUDynamics").Get() if p.HasAttribute("physxScene:enableGPUDynamics") else None
+            escenas_fis.append(f"{ruta} | gravedad {g} dir {d} | pasos/s {hz} | GPU {gpu}")
+        if p.HasAPI(UsdPhysics.RigidBodyAPI):
+            m = p.GetAttribute("physics:mass").Get() if p.HasAttribute("physics:mass") else None
+            cin = p.GetAttribute("physics:kinematicEnabled").Get() if p.HasAttribute("physics:kinematicEnabled") else False
+            cuerpos.append(f"{ruta} | masa {m if m else 'auto (por densidad)'}{' | CINEMATICO' if cin else ''}")
+        elif p.HasAPI(UsdPhysics.CollisionAPI):
+            estaticos.append(ruta)
+        if p.HasAPI(UsdPhysics.ArticulationRootAPI):
+            robots.append(ruta)
+        if p.IsA(UsdPhysics.Joint):
+            joints.append(f"{ruta} [{p.GetTypeName()}]")
+        if p.IsA(UsdGeom.Camera):
+            f = UsdGeom.Camera(p).GetFocalLengthAttr().Get()
+            camaras.append(f"{ruta} | focal {f}")
+        if p.HasAPI(UsdLux.LightAPI) or "Light" in (p.GetTypeName() or ""):
+            luces.append(f"{ruta} [{p.GetTypeName()}]")
+
+    def seccion(titulo, items, maximo=40):
+        out.append(f"\n{titulo} ({len(items)})")
+        out.extend("  " + i for i in items[:maximo])
+        if len(items) > maximo:
+            out.append(f"  ... y {len(items) - maximo} mas")
+
+    seccion("ESCENA DE FISICA", escenas_fis)
+    seccion("CUERPOS RIGIDOS (se mueven con la fisica)", cuerpos)
+    seccion("COLISIONADORES ESTATICOS (chocan pero no se mueven)", estaticos)
+    seccion("ROBOTS / ARTICULACIONES", robots)
+    seccion("JOINTS", joints)
+    seccion("CAMARAS", camaras)
+    seccion("LUCES", luces)
+    out.append("\nPRIMS POR TIPO")
+    out.extend(f"  {t}: {n}" for t, n in sorted(tipos.items(), key=lambda x: -x[1]))
+    return mostrar("\n".join(out), "Escena", 1000, 750)
+
+
 def ayuda():
     """Lista las herramientas disponibles."""
-    fns = [actualizar, correr, mostrar, ver, archivos, guardar, diagnostico, inventario_ejemplos, inspeccionar, prims, ayuda]
+    fns = [actualizar, correr, mostrar, ver, archivos, guardar, diagnostico, inventario_ejemplos, inspeccionar, prims, escena, ayuda]
     out = []
     for f in fns:
         out.append(f"{f.__name__}{inspect.signature(f)}\n    {(f.__doc__ or '').strip()}")

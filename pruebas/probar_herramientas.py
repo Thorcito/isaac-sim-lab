@@ -71,7 +71,10 @@ probar("prims", prims, ventana_ok)
 # 10. prims con una ruta que no existe (debe avisar, no romperse)
 probar("prims(ruta inexistente)", lambda: prims("/NoExiste/123"), ventana_ok)
 
-# 11. ayuda
+# 11. escena
+probar("escena", escena, ventana_ok)
+
+# 12. ayuda
 probar("ayuda", ayuda, ventana_ok)
 
 ok = sum(r.startswith("OK") for r in resultados)
