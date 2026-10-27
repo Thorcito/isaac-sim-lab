@@ -186,6 +186,34 @@ def prims(raiz="/"):
     return mostrar("\n".join(out) or "(escena vacia)", f"Prims: {raiz}", 900, 700)
 
 
+def medir(*rutas):
+    """Tamano y posicion reales (en el mundo) de uno o varios prims. Ej: medir("/World/Tarima")"""
+    import omni.usd
+    from pxr import Usd, UsdGeom
+    stage = omni.usd.get_context().get_stage()
+    mpu = UsdGeom.GetStageMetersPerUnit(stage)
+    cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), [UsdGeom.Tokens.default_, UsdGeom.Tokens.render])
+    out = [f"Unidades de la escena: {mpu} m por unidad (los valores de abajo estan en metros)", ""]
+    for ruta in rutas or ["/World"]:
+        p = stage.GetPrimAtPath(ruta)
+        if not p or not p.IsValid():
+            out.append(f"{ruta}: NO EXISTE")
+            continue
+        r = cache.ComputeWorldBound(p).ComputeAlignedRange()
+        if r.IsEmpty():
+            out.append(f"{ruta}: sin geometria")
+            continue
+        mn, mx = r.GetMin() * mpu, r.GetMax() * mpu
+        t = mx - mn
+        c = (mn + mx) / 2
+        out.append(f"{ruta}")
+        out.append(f"  tamano  X {t[0]:.3f}  Y {t[1]:.3f}  Z {t[2]:.3f}")
+        out.append(f"  centro  X {c[0]:.3f}  Y {c[1]:.3f}  Z {c[2]:.3f}")
+        out.append(f"  minimo  X {mn[0]:.3f}  Y {mn[1]:.3f}  Z {mn[2]:.3f}")
+        out.append(f"  maximo  X {mx[0]:.3f}  Y {mx[1]:.3f}  Z {mx[2]:.3f}")
+    return mostrar("\n".join(out), "Medir", 700, 120 + 110 * len(rutas or [1]))
+
+
 def codigo_ejemplo(nombre, abrir=3):
     """Busca el codigo fuente de un Robotics Example y abre sus archivos. Ej: codigo_ejemplo("Hello World")"""
     import omni.kit.app
@@ -295,7 +323,7 @@ def escena():
 
 def ayuda():
     """Lista las herramientas disponibles."""
-    fns = [actualizar, correr, mostrar, ver, archivos, guardar, diagnostico, inventario_ejemplos, inspeccionar, prims, escena, codigo_ejemplo, ayuda]
+    fns = [actualizar, correr, mostrar, ver, archivos, guardar, diagnostico, inventario_ejemplos, inspeccionar, prims, escena, medir, codigo_ejemplo, ayuda]
     out = []
     for f in fns:
         out.append(f"{f.__name__}{inspect.signature(f)}\n    {(f.__doc__ or '').strip()}")

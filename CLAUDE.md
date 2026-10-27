@@ -13,6 +13,7 @@ Repo de aprendizaje de **Isaac Sim 6.2** de Thorcito (ingeniero mecatrónico, co
 
 - Usar la API nueva: `isaacsim.core.experimental.*`, `isaacsim.core.simulation_manager.SimulationManager`. `isaacsim.core.api` y `World` están deprecados desde la 6.0.
 - Los scripts de práctica son **didácticos**: comentarios en español que expliquen el porqué, parámetros arriba en un diccionario, y un resultado visible con `mostrar()`.
-- Nada de datos de clientes (medidas, recetas, nombres) en el repo: se leen de `/isaac-sim/trabajo/privado/`.
+- Las medidas genéricas del ejercicio van en el repo, en archivos `.json` por fase (por ejemplo `fase1/celda.json`). Los scripts buscan primero una copia en `/isaac-sim/trabajo/scripts/` para que el usuario pueda experimentar sin que `actualizar()` la pise.
+- Datos que podrían ser sensibles (recetas, nombres del cliente, resultados de rendimiento): preguntar antes de subirlos. La carpeta `privado/` está bloqueada en `.gitignore` para eso.
 - No desactivar ni reactivar extensiones desde scripts: congeló Isaac Sim una vez.
 - Cada script nuevo debe probarse en la máquina antes de darse por bueno; marcar en su docstring si está probado.

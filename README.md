@@ -39,4 +39,4 @@ Para modificar un script del repo, primero copiarlo a `scripts/`. `correr("nombr
 - `faseN/`: scripts de práctica de cada fase del plan de aprendizaje
 - `publicar.bat`: publica los cambios locales a GitHub (Windows)
 
-Los datos de proyectos de clientes no se suben a este repo: los scripts los leen de archivos que viven solo en la máquina.
+Las medidas de cada fase están en archivos `.json` dentro de su carpeta. Para experimentar, copiarlos a `/isaac-sim/trabajo/scripts/` y editar la copia: los scripts la usan en lugar de la del repo.

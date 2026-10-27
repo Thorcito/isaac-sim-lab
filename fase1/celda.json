@@ -1,0 +1,81 @@
+{
+  "piso": {
+    "largo_x": 7.7,
+    "ancho_y": 5.5
+  },
+  "zona_estiba": {
+    "lado": 2.7,
+    "margen_borde": 0.2
+  },
+  "tarima": {
+    "largo": 1.2,
+    "ancho": 1.0,
+    "alto": 0.144,
+    "estiba_max": 1.4,
+    "tolerancia": 0.05
+  },
+  "tarimas_molinete": {
+    "separacion": 0.45
+  },
+  "pedestal": {
+    "lado": 0.5,
+    "alto": 0.6
+  },
+  "robots": {
+    "cr20a_alcance": 1.7,
+    "cr6al_alcance": 1.8,
+    "base_radio": 0.12,
+    "base_alto": 0.15,
+    "cr6al_dist_bahias": 0.9
+  },
+  "punto_toma": {
+    "dist_fuera_zona": 0.1
+  },
+  "minibanda": {
+    "largo": 1.5,
+    "ancho": 0.4,
+    "alto": 0.75
+  },
+  "bahias": {
+    "cantidad": 4,
+    "largo": 0.45,
+    "ancho": 0.35,
+    "alto": 0.75,
+    "separacion": 0.1,
+    "dist_minibanda": 0.3
+  },
+  "banda": {
+    "canales": 5,
+    "ancho_canal": 0.12,
+    "divisor": 0.015,
+    "largo": 3.0,
+    "alto": 0.85,
+    "dist_cr6al": 0.8
+  },
+  "magazine": {
+    "largo": 0.8,
+    "ancho": 0.6,
+    "alto": 1.0,
+    "dist_y_cr6al": -1.0
+  },
+  "camara": {
+    "altura_sobre_banda": 1.2,
+    "campo_x": 0.67,
+    "campo_y": 0.56,
+    "offset_y": 0.5
+  },
+  "_supuestos": [
+    "zona_estiba.margen_borde 0.2 m: distancia de la zona de estiba al borde este del piso",
+    "tarima.alto 0.144 m: alto tipico de tarima",
+    "tarimas_molinete.separacion 0.45 m: deja un hueco central de 0.65 m para el pedestal",
+    "pedestal 0.5 x 0.5 x 0.6 m",
+    "robots.base_radio / base_alto: solo marcadores visuales",
+    "robots.cr6al_dist_bahias 0.9 m: base del CR6AL respecto de las bahias",
+    "punto_toma.dist_fuera_zona 0.1 m: punto de toma del CR20A justo afuera de la zona de estiba",
+    "minibanda ancho 0.4 m y alto 0.75 m (el largo 1.5 m es dato)",
+    "bahias: 0.45 x 0.35 x 0.75 m, separadas 0.1 m, a 0.3 m de la mini-banda, en fila",
+    "banda: canal de 0.12 m, divisor de 0.015 m, 3.0 m de largo, 0.85 m de alto, a 0.8 m del CR6AL",
+    "magazine 0.8 x 0.6 x 1.0 m, 1.0 m al sur del CR6AL",
+    "camara.offset_y 0.5 m: camara corrida 0.5 m aguas arriba del CR6AL"
+  ]
+}

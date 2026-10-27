@@ -74,6 +74,9 @@ probar("prims(ruta inexistente)", lambda: prims("/NoExiste/123"), ventana_ok)
 # 11. escena
 probar("escena", escena, ventana_ok)
 
+# 11b. medir: la escena entera y una ruta inexistente
+probar("medir", lambda: medir("/World", "/NoExiste"), ventana_ok)
+
 # 12. codigo_ejemplo (abre 0 archivos para no llenar la pantalla)
 def _codigo():
     w = codigo_ejemplo("Hello World", abrir=0)
