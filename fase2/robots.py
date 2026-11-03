@@ -43,11 +43,14 @@ PARAMS = {
     "tol_alcance": 0.02,       # m: diferencia aceptada entre el alcance del URDF y el dato
     "tol_altura_reposo": 0.15, # m: alto medido del robot importado contra el calculado
     "margen_max": 0.30,        # m: hasta cuanto se busca el margen de alcance (mas = mas lento)
+    "variantes": [("PhysX", "physx")],  # variante del robot importado que trae joints y fisica
     "color_cr20a": (1.0, 0.55, 0.0, 1.0),
     "color_cr6al": (0.2, 0.6, 1.0, 1.0),
     "nota": TRABAJO + "/notas/etapa2_alcances.txt",
 }
 ROBOTS = {"cr20a": "CR20A", "cr6al": "CR6AL"}
+# Recorre tambien prims instanciados, inactivos y sin tipo: el importador puede dejar la fisica ahi
+TODOS = Usd.TraverseInstanceProxies(Usd.PrimAllPrimsPredicate)
 PEDESTAL = {"cr20a": "pedestal_cr20a", "cr6al": "pedestal_cr6al"}
 # --------------------------------------------
 
@@ -85,6 +88,19 @@ def _corregir(M, S, clave, urdf_original, carpeta):
             ine.set(eje, "0")
     for i, esfuerzo in enumerate(S["robots_esfuerzo_nm"][clave]):
         raiz.find(f"joint[@name='joint{i + 1}']/limit").set("effort", str(esfuerzo))
+    # Mallas que no corresponden a sus joints: cilindro desde el origen del link hasta el joint siguiente
+    for nombre, radio in M[clave].get("mallas_a_cilindro", {}).items():
+        hijo = next(j for j in raiz.findall("joint") if j.find("parent").get("link") == nombre)
+        x, y, z = [float(v) for v in hijo.find("origin").get("xyz").split()]
+        largo = math.sqrt(x * x + y * y + z * z)
+        if abs(z) < 0.9 * largo:
+            raise ValueError(f"{nombre}: el joint siguiente no esta sobre Z; el cilindro quedaria mal orientado")
+        for parte in ("visual", "collision"):
+            nodo = raiz.find(f"link[@name='{nombre}']/{parte}")
+            nodo.find("origin").attrib.update({"xyz": f"{x / 2} {y / 2} {z / 2}", "rpy": "0 0 0"})
+            geo = nodo.find("geometry")
+            geo.clear()
+            ET.SubElement(geo, "cylinder", {"radius": str(radio), "length": f"{largo:.4f}"})
     salida = os.path.join(carpeta, f"{clave}_isaac.urdf")
     ET.ElementTree(raiz).write(salida, encoding="utf-8", xml_declaration=True)
     return salida
@@ -96,7 +112,8 @@ def _importar(S, urdf, carpeta_usd):
         if os.path.isdir(carpeta_usd) else []
     nombre = os.path.splitext(os.path.basename(urdf))[0]
     previo = next((p for p in existentes if os.path.splitext(os.path.basename(p))[0] == nombre), None)
-    if previo and not PARAMS["reimportar"]:
+    # se reutiliza el USD solo si es mas nuevo que el URDF corregido (si cambio celda.json, se reimporta)
+    if previo and not PARAMS["reimportar"] and os.path.getmtime(previo) > os.path.getmtime(urdf):
         return previo
     from isaacsim.asset.importer.urdf import URDFImporter, URDFImporterConfig
     drive = S["robots_drive"]
@@ -118,13 +135,37 @@ def _anclar_al_mundo(stage, ruta_robot, pos):
     """El joint fijo que agrega el importador ancla el robot al ORIGEN del mundo. Si no se corrige,
     al dar Play el robot salta al origen. Se pone el ancla en la posicion del pedestal."""
     corregidos = 0
-    for p in Usd.PrimRange(stage.GetPrimAtPath(ruta_robot)):
+    for p in Usd.PrimRange(stage.GetPrimAtPath(ruta_robot), TODOS):
+        if p.IsInstanceProxy():
+            continue  # un prim instanciado no se puede editar desde la escena
         if p.IsA(UsdPhysics.FixedJoint) and not UsdPhysics.FixedJoint(p).GetBody0Rel().GetTargets():
             j = UsdPhysics.FixedJoint(p)
             j.CreateLocalPos0Attr().Set(Gf.Vec3f(*pos))
             j.CreateLocalRot0Attr().Set(Gf.Quatf(1.0))
             corregidos += 1
     return corregidos
+
+
+def _diagnostico_fisica(stage, ruta_robot, usd):
+    """Si no aparecen joints: donde quedo la fisica del robot importado (variantes, capas, payloads)."""
+    out = []
+    asset = Usd.Stage.Open(usd)
+    dp = asset.GetDefaultPrim()
+    out.append(f"  archivo {usd}: default prim {dp.GetPath() if dp else '(ninguno)'}")
+    for vs in (dp.GetVariantSets().GetNames() if dp else []):
+        v = dp.GetVariantSets().GetVariantSet(vs)
+        out.append(f"  variante '{vs}': opciones {v.GetVariantNames()}, elegida '{v.GetVariantSelection()}'")
+    out.append("  capas: " + ", ".join(os.path.basename(l.identifier) for l in asset.GetLayerStack()))
+    tipos = {}
+    for p in Usd.PrimRange(asset.GetPseudoRoot(), TODOS):
+        t = p.GetTypeName()
+        if "Joint" in t:
+            tipos[t] = tipos.get(t, 0) + 1
+    out.append(f"  joints dentro del archivo, abierto solo: {tipos or 'ninguno'}")
+    modelo = stage.GetPrimAtPath(ruta_robot + "/modelo")
+    out.append(f"  en la escena: payload cargado={modelo.IsLoaded()}, instanciado={modelo.IsInstance()}, "
+               f"hijos={[c.GetName() for c in modelo.GetChildren()][:10]}")
+    return out
 
 
 def _objetivos_cr20a(D, S, ex, ey):
@@ -212,10 +253,13 @@ def _robots():
         pos = (p["centro"][0], p["centro"][1], p["alto"])
         ruta = f"{PARAMS['raiz_robots']}/{nombre}"
         UsdGeom.Xform.Define(stage, ruta).AddTranslateOp().Set(Gf.Vec3d(*pos))
-        stage_utils.add_reference_to_stage(modelos[clave]["usd"], ruta + "/modelo")
+        # el importador 6.2 guarda la fisica en la variante PhysX: sin elegirla no hay joints
+        stage_utils.add_reference_to_stage(modelos[clave]["usd"], ruta + "/modelo", variants=PARAMS["variantes"])
         n_fix = _anclar_al_mundo(stage, ruta, pos)
-        revol = [q for q in Usd.PrimRange(stage.GetPrimAtPath(ruta)) if q.IsA(UsdPhysics.RevoluteJoint)]
-        control(len(revol) == 6, f"{nombre}: {len(revol)} joints de rotacion (esperado 6); anclas al mundo corregidas: {n_fix}")
+        revol = [q for q in Usd.PrimRange(stage.GetPrimAtPath(ruta), TODOS) if q.IsA(UsdPhysics.RevoluteJoint)]
+        if not control(len(revol) == 6, f"{nombre}: {len(revol)} joints de rotacion (esperado 6); anclas al mundo corregidas: {n_fix}"):
+            info.append(f"Diagnostico de fisica de {nombre}:")
+            info.extend(_diagnostico_fisica(stage, ruta, modelos[clave]["usd"]))
         modelos[clave]["pos"], modelos[clave]["ruta"] = pos, ruta
 
     # Escala: el alto medido del robot en reposo contra la cinematica directa del URDF

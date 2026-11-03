@@ -24,7 +24,9 @@
     "paquete_ros": "dobot_rviz",
     "mallas": ["base_link", "Link1", "Link2", "Link3", "Link4", "Link5", "Link6"],
     "cr20a": {"urdf": "urdf/cr20_robot.urdf", "carpeta_mallas": "meshes/cr20", "link_final": "Link6", "eje_brida": [0, 0, 1], "brida_offset": 0.0},
-    "cr6al": {"urdf": "urdf/cr6al_robot.urdf", "carpeta_mallas": "meshes/cr6al", "link_final": "Link6", "eje_brida": [0, -1, 0], "brida_offset": 0.0553}
+    "cr6al": {"urdf": "urdf/cr6al_robot.urdf", "carpeta_mallas": "meshes/cr6al", "link_final": "Link6", "eje_brida": [0, -1, 0], "brida_offset": 0.0553,
+              "mallas_a_cilindro": {"Link2": 0.065, "Link3": 0.055},
+              "_nota_mallas": "En el URDF oficial, las mallas de Link2 y Link3 del CR6AL vienen acostadas y mas cortas que sus joints (parecen de otro modelo). Se reemplazan por cilindros de este radio (m) que van de un joint al siguiente. Solo cambia lo visual y la colision; la cinematica es la del URDF."}
   },
 
   "_supuestos": {
