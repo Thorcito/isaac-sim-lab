@@ -2,7 +2,7 @@
 
 **Duración:** unas 2,5 h, en una o dos sesiones.
 **Objetivo:** entender cómo está hecha una escena por dentro (prims, grupos, transformadas, unidades, referencias) y construir el layout de la celda a escala real desde un archivo de medidas.
-**Listo cuando:** `layout.py` muestra **todas las verificaciones en OK**, la escena queda guardada en `escenas/fase1/celda_layout.usd`, y la bitácora (al final) tiene respuesta.
+**Listo cuando:** `verificar_escena.py` dice **ETAPA 1 LISTA** (todo PASA), la escena queda guardada en `escenas/etapa1/celda.usd`, y la bitácora (al final) tiene respuesta. Esta fase es la etapa 1 del ejercicio (ver `PLAN.md`).
 
 ## Antes de empezar
 
@@ -13,7 +13,7 @@
    ```python
    actualizar()
    ```
-2. Las medidas de la celda están en `fase1/celda.json`. Leerlas con `ver(REPO_DIR + "/fase1/celda.json")`. Los valores de la lista `_supuestos` no vienen del ejercicio: son estimaciones para poder armar el layout.
+2. Las medidas de la celda están en `fase1/celda.json`. Leerlas con `ver(REPO_DIR + "/fase1/celda.json")`. La sección `datos` trae solo lo que da el ejercicio; todo lo de `_supuestos` es estimación, con su `valor` y su `razon`.
 3. Herramienta nueva de esta fase: **`medir("/ruta")`** da el tamaño, el centro y los límites reales de cualquier prim, en metros. Acepta varias rutas: `medir("/World/A", "/World/B")`.
 
 ---
@@ -75,26 +75,25 @@ Guardar como `/isaac-sim/trabajo/escenas/fase1/tarima.usda`.
 
 Así se arma la celda real: los robots, las tarimas y las cajas son archivos aparte, referenciados desde una escena principal.
 
-## Bloque 5 · Layout paramétrico de la celda (40 min)
+## Bloque 5 · Escena a escala de la celda (40 min)
 
-1. **File → New**, y después `correr("fase1/layout.py")`.
-2. Se crea `/World/Celda`:
-   - Piso.
-   - Zona de estiba con líneas pintadas, 4 tarimas, pedestal y base del CR20A.
-   - Zona de alimentación: banda de 5 canales, magazine, base del CR6AL, bahías, mini-banda y punto de toma.
-   - Marcador de la cámara con su campo de visión pintado sobre la banda.
-3. La ventana **Layout: verificación** mide la escena ya construida y la compara con los datos. Debe dar **todo OK**.
-4. Recorrer la jerarquía en el panel Stage. Ocultar y mostrar grupos con el ojo. Usar `medir()` en lo que te interese verificar a mano.
-5. Leer la parte de **distancias informativas** y la lista de **supuestos**: son medidas que el ejercicio no da y que el script asume.
-6. **Cambiar un parámetro y regenerar.** `layout.py` usa tu copia `scripts/celda.json` si existe, y si no la del repo. Así podés experimentar sin que `actualizar()` pise tus cambios. Por ejemplo, la separación entre tarimas:
+1. `correr("fase1/armar_escena.py")`. Abre una escena **nueva** (guardá antes lo que tengas abierto), crea `/World/Celda` y la guarda en `escenas/etapa1/celda.usd`:
+   - Piso, pasos de personal (verde) y zona de estiba (amarillo).
+   - 4 tarimas en molinete y el pedestal del CR20A.
+   - Banda de 5 canales, mini-banda con tope y punto de toma, bahías B1 a B4, pedestal del CR6AL y magazine.
+   - Pórtico con la cámara y su campo pintado sobre la banda; tablero, tablet y baliza.
+2. `correr("fase1/verificar_escena.py")`. Mide cada pieza con `medidas()` (lo mismo que usa `medir()`), la compara con `celda.json` y con los datos del ejercicio, y dibuja los círculos de alcance. Debe decir **ETAPA 1 LISTA**. El reporte queda en `notas/etapa1_verificacion.txt`.
+3. Recorrer la jerarquía en el panel Stage. Ocultar y mostrar grupos con el ojo. Usar `medir()` en lo que te interese verificar a mano.
+4. Leer la parte **INFORMATIVO**: distancias en planta. La esquina más lejana de las tarimas queda más lejos que 1,7 m; la etapa 2 muestra por qué igual llega.
+5. **Cambiar un dato y verificar.** Los scripts usan tu copia `scripts/celda.json` si existe, y si no la del repo. Así podés experimentar sin que `actualizar()` pise tus cambios. Por ejemplo, correr la tarima Norte 5 cm hacia el pedestal:
    ```python
-   import json; p = MIS_SCRIPTS + "/celda.json"; d = json.load(open(REPO_DIR + "/fase1/celda.json")); d["tarimas_molinete"]["separacion"] = 0.30; json.dump(d, open(p, "w"), indent=2, ensure_ascii=False); correr("fase1/layout.py")
+   import json; p = MIS_SCRIPTS + "/celda.json"; d = json.load(open(REPO_DIR + "/fase1/celda.json", encoding="utf-8")); d["_supuestos"]["tarimas"]["valor"]["Norte"]["centro"] = [5.35, 3.45]; json.dump(d, open(p, "w", encoding="utf-8"), indent=2, ensure_ascii=False); correr("fase1/armar_escena.py"); correr("fase1/verificar_escena.py")
    ```
-   *¿Qué verificación falla y por qué?* La primera línea de la ventana dice qué archivo de datos usó. Para volver a los valores originales, borrar la copia y regenerar:
+   *¿Qué control falla y por qué?* La línea "Datos:" dice qué archivo se usó. Para volver a los valores originales, borrar la copia y regenerar:
    ```python
-   os.remove(MIS_SCRIPTS + "/celda.json"); correr("fase1/layout.py")
+   os.remove(MIS_SCRIPTS + "/celda.json"); correr("fase1/armar_escena.py"); correr("fase1/verificar_escena.py")
    ```
-7. Guardar como `/isaac-sim/trabajo/escenas/fase1/celda_layout.usd`.
+6. Los círculos son dibujo de depuración, no prims: no se guardan en la escena. Se borran con `limpiar_dibujos()`.
 
 ---
 
@@ -103,8 +102,8 @@ Así se arma la celda real: los robots, las tarimas y las cajas son archivos apa
 1. **Size vs Scale:** ¿se ven igual? ¿Qué dato cambia en Property y en el `.usda` en cada caso? ¿Cuál conviene para que la escena "diga" las medidas reales?
 2. Al mover el `Grupo`, ¿qué pasó con la posición **local** del cubo y con su posición de **mundo**?
 3. ¿En qué orden aplica USD translate, rotate y scale? ¿Qué pasó en el experimento del Bloque 2 al cambiar el orden?
-4. **Tarimas:** ¿por qué `layout.py` las acomoda en **molinete** y no en una cruz simple (una tarima centrada a cada lado del pedestal)? Calculá el lado que necesitaría la cruz simple con un pedestal de 0,5 m y comparalo con la zona de estiba.
-5. La verificación dice que la esquina más lejana de las tarimas está a más distancia que el alcance del CR20A, medida en planta. ¿Es necesariamente un problema? ¿Qué falta considerar? Pistas: dónde cae el centro de la caja más lejana, la altura de la camada y la altura del pedestal. Se resuelve en la fase 3.
+4. **Tarimas:** ¿por qué la escena las acomoda en **molinete** y no en una cruz simple (una tarima centrada a cada lado del pedestal)? Calculá el lado que necesitaría la cruz simple sin que se toquen las esquinas y comparalo con la zona de estiba.
+5. La verificación dice que la esquina más lejana de las tarimas está a 1,77 m en planta, más que el alcance del CR20A. ¿Es necesariamente un problema? ¿Qué falta considerar? Pistas: dónde cae el centro de la caja más lejana, la altura de la camada y la altura del pedestal. Se resuelve en la etapa 2 (`fase2/robots.py`).
 6. **Referencias:** después de cambiar `tarima.usda`, ¿cambiaron las 4 copias? ¿Qué ventaja da esto para la celda?
 7. De la lista `_supuestos` de `celda.json`, ¿cuáles le pedirías a Fundametl que confirme?
 8. ¿Qué fue confuso o no respondió por el streaming?

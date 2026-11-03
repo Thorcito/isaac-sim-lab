@@ -30,13 +30,16 @@ Para bajar cambios nuevos del repo: `actualizar()`. Para ver todas las funciones
 | `/isaac-sim/trabajo/scripts/` | Scripts propios o copias modificadas | No |
 | `/isaac-sim/trabajo/notas/` | Resultados, inventarios, bitácora | No |
 | `/isaac-sim/trabajo/escenas/` | Escenas `.usd` | No |
+| `/isaac-sim/trabajo/robots/` | URDF bajados y robots convertidos a USD | No |
 
 Para modificar un script del repo, primero copiarlo a `scripts/`. `correr("nombre.py")` busca primero en `scripts/` y después en `repo/`.
 
 ## Estructura del repo
 
-- `herramientas.py`: funciones generales (`actualizar`, `correr`, `ver`, `prims`, `diagnostico`…)
-- `faseN/`: scripts de práctica de cada fase del plan de aprendizaje
+- `PLAN.md`: las 6 etapas del ejercicio, cada una con su criterio de "lista", y las decisiones tomadas
+- `herramientas.py`: funciones generales (`actualizar`, `correr`, `ver`, `prims`, `medir`, `leer_celda`, `dibujar_circulo`…)
+- `faseN/`: scripts de cada etapa (`fase0` orientación, `fase1` escena a escala, `fase2` robots y alcances…)
+- `pruebas/`: prueba de las herramientas (`correr("pruebas/probar_herramientas.py")`)
 - `publicar.bat`: publica los cambios locales a GitHub (Windows)
 
 Las medidas de cada fase están en archivos `.json` dentro de su carpeta. Para experimentar, copiarlos a `/isaac-sim/trabajo/scripts/` y editar la copia: los scripts la usan en lugar de la del repo.

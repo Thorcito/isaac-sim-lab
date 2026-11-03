@@ -9,9 +9,9 @@ Bajar la ultima version del repo y recargar las herramientas:
 Despues se llaman las funciones, por ejemplo:
     ayuda()
     ver("/isaac-sim/trabajo/notas/inventario_ejemplos.txt")
-    correr("fase1/layout.py")
+    correr("fase1/armar_escena.py")
 """
-import os, sys, re, shutil, subprocess, platform, inspect, io, tarfile, tempfile, urllib.request
+import os, sys, re, math, shutil, subprocess, platform, inspect, io, tarfile, tempfile, urllib.request
 from collections import defaultdict
 import omni.ui as ui
 
@@ -62,7 +62,7 @@ def guardar(nombre, texto, carpeta=MIS_SCRIPTS):
 
 
 def correr(nombre):
-    """Corre un script. Busca primero en scripts/ (tuyos) y luego en repo/. Ej: correr("fase1/layout.py")"""
+    """Corre un script. Busca primero en scripts/ (tuyos) y luego en repo/. Ej: correr("fase1/armar_escena.py")"""
     if nombre.startswith("/"):
         ruta = nombre
     else:
@@ -186,32 +186,86 @@ def prims(raiz="/"):
     return mostrar("\n".join(out) or "(escena vacia)", f"Prims: {raiz}", 900, 700)
 
 
-def medir(*rutas):
-    """Tamano y posicion reales (en el mundo) de uno o varios prims. Ej: medir("/World/Tarima")"""
+def medidas(*rutas):
+    """Como medir() pero devuelve numeros: {ruta: {"min","max","tam","centro"}} en metros, o None si no existe."""
     import omni.usd
     from pxr import Usd, UsdGeom
     stage = omni.usd.get_context().get_stage()
     mpu = UsdGeom.GetStageMetersPerUnit(stage)
     cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), [UsdGeom.Tokens.default_, UsdGeom.Tokens.render])
-    out = [f"Unidades de la escena: {mpu} m por unidad (los valores de abajo estan en metros)", ""]
+    res = {}
     for ruta in rutas or ["/World"]:
         p = stage.GetPrimAtPath(ruta)
-        if not p or not p.IsValid():
-            out.append(f"{ruta}: NO EXISTE")
+        r = cache.ComputeWorldBound(p).ComputeAlignedRange() if p and p.IsValid() else None
+        if r is None or r.IsEmpty():
+            res[ruta] = None
             continue
-        r = cache.ComputeWorldBound(p).ComputeAlignedRange()
-        if r.IsEmpty():
-            out.append(f"{ruta}: sin geometria")
+        mn, mx = [tuple(v * mpu for v in x) for x in (r.GetMin(), r.GetMax())]
+        res[ruta] = {"min": mn, "max": mx, "tam": tuple(b - a for a, b in zip(mn, mx)),
+                     "centro": tuple((a + b) / 2 for a, b in zip(mn, mx))}
+    return res
+
+
+def medir(*rutas):
+    """Tamano y posicion reales (en el mundo) de uno o varios prims. Ej: medir("/World/Tarima")"""
+    import omni.usd
+    from pxr import UsdGeom
+    mpu = UsdGeom.GetStageMetersPerUnit(omni.usd.get_context().get_stage())
+    out = [f"Unidades de la escena: {mpu} m por unidad (los valores de abajo estan en metros)", ""]
+    for ruta, m in medidas(*rutas).items():
+        if m is None:
+            out.append(f"{ruta}: NO EXISTE o sin geometria")
             continue
-        mn, mx = r.GetMin() * mpu, r.GetMax() * mpu
-        t = mx - mn
-        c = (mn + mx) / 2
+        mn, mx, t, c = m["min"], m["max"], m["tam"], m["centro"]
         out.append(f"{ruta}")
         out.append(f"  tamano  X {t[0]:.3f}  Y {t[1]:.3f}  Z {t[2]:.3f}")
         out.append(f"  centro  X {c[0]:.3f}  Y {c[1]:.3f}  Z {c[2]:.3f}")
         out.append(f"  minimo  X {mn[0]:.3f}  Y {mn[1]:.3f}  Z {mn[2]:.3f}")
         out.append(f"  maximo  X {mx[0]:.3f}  Y {mx[1]:.3f}  Z {mx[2]:.3f}")
     return mostrar("\n".join(out), "Medir", 700, 120 + 110 * len(rutas or [1]))
+
+
+def leer_celda(nombre="fase1/celda.json"):
+    """Lee las medidas de la celda. Usa tu copia en scripts/ si existe; si no, la del repo.
+
+    Devuelve (D, S, ruta): D = datos del ejercicio, S = {nombre: valor} de los supuestos,
+    ruta = archivo que se leyo. El dict completo queda en D["_todo"] (incluye "modelos").
+    """
+    import json
+    candidatos = [os.path.join(MIS_SCRIPTS, os.path.basename(nombre)), os.path.join(REPO_DIR, nombre)]
+    ruta = next((r for r in candidatos if os.path.isfile(r)), None)
+    if ruta is None:
+        raise FileNotFoundError("No encontre " + " ni ".join(candidatos) + ". Corre actualizar().")
+    todo = json.load(open(ruta, encoding="utf-8"))
+    D = dict(todo["datos"], _todo=todo)
+    S = {k: v["valor"] for k, v in todo["_supuestos"].items()}
+    return D, S, ruta
+
+
+def _debug_draw():
+    from isaacsim.util.debug_draw import _debug_draw as dd
+    return dd.acquire_debug_draw_interface()
+
+
+def dibujar_circulo(centro, radio, color=(1.0, 0.5, 0.0, 1.0), ancho=3.0, lados=96):
+    """Dibuja un circulo horizontal (solo visual, no es un prim). centro=(x, y, z) en metros."""
+    x, y, z = centro
+    pts = [(x + radio * math.cos(2 * math.pi * i / lados), y + radio * math.sin(2 * math.pi * i / lados), z)
+           for i in range(lados + 1)]
+    _debug_draw().draw_lines(pts[:-1], pts[1:], [tuple(color)] * lados, [float(ancho)] * lados)
+
+
+def dibujar_puntos(puntos, color=(0.0, 1.0, 0.0, 1.0), tam=12.0):
+    """Dibuja puntos (solo visual). puntos = lista de (x, y, z) en metros."""
+    puntos = [tuple(p) for p in puntos]
+    _debug_draw().draw_points(puntos, [tuple(color)] * len(puntos), [float(tam)] * len(puntos))
+
+
+def limpiar_dibujos():
+    """Borra todos los circulos, lineas y puntos de dibujar_circulo / dibujar_puntos."""
+    dd = _debug_draw()
+    dd.clear_lines()
+    dd.clear_points()
 
 
 def codigo_ejemplo(nombre, abrir=3):
@@ -323,7 +377,8 @@ def escena():
 
 def ayuda():
     """Lista las herramientas disponibles."""
-    fns = [actualizar, correr, mostrar, ver, archivos, guardar, diagnostico, inventario_ejemplos, inspeccionar, prims, escena, medir, codigo_ejemplo, ayuda]
+    fns = [actualizar, correr, mostrar, ver, archivos, guardar, diagnostico, inventario_ejemplos, inspeccionar, prims, escena,
+           medir, medidas, leer_celda, dibujar_circulo, dibujar_puntos, limpiar_dibujos, codigo_ejemplo, ayuda]
     out = []
     for f in fns:
         out.append(f"{f.__name__}{inspect.signature(f)}\n    {(f.__doc__ or '').strip()}")

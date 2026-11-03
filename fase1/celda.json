@@ -1,81 +1,138 @@
 {
-  "piso": {
-    "largo_x": 7.7,
-    "ancho_y": 5.5
-  },
-  "zona_estiba": {
-    "lado": 2.7,
-    "margen_borde": 0.2
-  },
-  "tarima": {
-    "largo": 1.2,
-    "ancho": 1.0,
-    "alto": 0.144,
+  "_leeme": "Fuente unica de verdad de medidas y posiciones de la celda (una estacion). Metros, grados y kg. Origen en la esquina suroeste del piso, X al este, Y al norte, Z arriba. 'datos' trae solo lo que da el ejercicio. '_supuestos' trae todo lo demas: cada entrada tiene 'valor' (lo que leen los scripts) y 'razon'. 'modelos' dice de donde se bajan los URDF. Para experimentar, copiar este archivo a /isaac-sim/trabajo/scripts/celda.json y editar la copia.",
+
+  "datos": {
+    "piso": [7.7, 5.5],
+    "zona_estiba_lado": 2.7,
+    "tarima": [1.2, 1.0],
     "estiba_max": 1.4,
-    "tolerancia": 0.05
-  },
-  "tarimas_molinete": {
-    "separacion": 0.45
-  },
-  "pedestal": {
-    "lado": 0.5,
-    "alto": 0.6
-  },
-  "robots": {
-    "cr20a_alcance": 1.7,
-    "cr6al_alcance": 1.8,
-    "base_radio": 0.12,
-    "base_alto": 0.15,
-    "cr6al_dist_bahias": 0.9
-  },
-  "punto_toma": {
-    "dist_fuera_zona": 0.1
-  },
-  "minibanda": {
-    "largo": 1.5,
-    "ancho": 0.4,
-    "alto": 0.75
-  },
-  "bahias": {
-    "cantidad": 4,
-    "largo": 0.45,
-    "ancho": 0.35,
-    "alto": 0.75,
-    "separacion": 0.1,
-    "dist_minibanda": 0.3
-  },
-  "banda": {
+    "tarima_tolerancia": 0.05,
+    "minibanda_largo": 1.5,
+    "bahias": 4,
     "canales": 5,
-    "ancho_canal": 0.12,
-    "divisor": 0.015,
-    "largo": 3.0,
-    "alto": 0.85,
-    "dist_cr6al": 0.8
+    "variedades": 4,
+    "ritmo_estuches_min": [15, 20],
+    "cr20a": {"alcance": 1.7, "carga_kg": 20, "repetibilidad_mm": 0.05, "vel_max_m_s": 2.0},
+    "cr6al": {"alcance": 1.8, "carga_kg": 6, "repetibilidad_mm": 0.02},
+    "camara": {"altura_sobre_banda": 1.2, "campo": [0.67, 0.56], "mm_por_px": 0.27, "focal_mm": 12, "fps": 23, "color_ms": 5},
+    "aire_bar": 6
   },
-  "magazine": {
-    "largo": 0.8,
-    "ancho": 0.6,
-    "alto": 1.0,
-    "dist_y_cr6al": -1.0
+
+  "modelos": {
+    "_nota": "URDF oficiales de Dobot (repo DOBOT_6Axis_ROS2_V4, licencia MIT), fijados a un commit para que no cambien solos. El CR20A usa el modelo 'cr20' del repo: su cadena da 1,705 m de alcance, igual al dato.",
+    "base_url": "https://raw.githubusercontent.com/Dobot-Arm/DOBOT_6Axis_ROS2_V4/ec201c40d5db63185a3593ec9c39f80fe25aa527/dobot_rviz",
+    "paquete_ros": "dobot_rviz",
+    "mallas": ["base_link", "Link1", "Link2", "Link3", "Link4", "Link5", "Link6"],
+    "cr20a": {"urdf": "urdf/cr20_robot.urdf", "carpeta_mallas": "meshes/cr20", "link_final": "Link6", "eje_brida": [0, 0, 1], "brida_offset": 0.0},
+    "cr6al": {"urdf": "urdf/cr6al_robot.urdf", "carpeta_mallas": "meshes/cr6al", "link_final": "Link6", "eje_brida": [0, -1, 0], "brida_offset": 0.0553}
   },
-  "camara": {
-    "altura_sobre_banda": 1.2,
-    "campo_x": 0.67,
-    "campo_y": 0.56,
-    "offset_y": 0.5
-  },
-  "_supuestos": [
-    "zona_estiba.margen_borde 0.2 m: distancia de la zona de estiba al borde este del piso",
-    "tarima.alto 0.144 m: alto tipico de tarima",
-    "tarimas_molinete.separacion 0.45 m: deja un hueco central de 0.65 m para el pedestal",
-    "pedestal 0.5 x 0.5 x 0.6 m",
-    "robots.base_radio / base_alto: solo marcadores visuales",
-    "robots.cr6al_dist_bahias 0.9 m: base del CR6AL respecto de las bahias",
-    "punto_toma.dist_fuera_zona 0.1 m: punto de toma del CR20A justo afuera de la zona de estiba",
-    "minibanda ancho 0.4 m y alto 0.75 m (el largo 1.5 m es dato)",
-    "bahias: 0.45 x 0.35 x 0.75 m, separadas 0.1 m, a 0.3 m de la mini-banda, en fila",
-    "banda: canal de 0.12 m, divisor de 0.015 m, 3.0 m de largo, 0.85 m de alto, a 0.8 m del CR6AL",
-    "magazine 0.8 x 0.6 x 1.0 m, 1.0 m al sur del CR6AL",
-    "camara.offset_y 0.5 m: camara corrida 0.5 m aguas arriba del CR6AL"
-  ]
+
+  "_supuestos": {
+    "zona_estiba_centro": {
+      "valor": [6.0, 2.75],
+      "razon": "Zona de estiba al este y centrada en Y. Queda a 0,35 m del borde este para que el circulo de 1,7 m del CR20A no se salga del piso, y deja 1,40 m libres al norte y al sur para cambiar tarimas."
+    },
+    "estiba_max_desde": {
+      "valor": "tarima",
+      "razon": "El ejercicio dice 'estiba de hasta 1,4 m' sin decir desde donde. Se toma el caso mas exigente para el alcance: 1,4 m de cajas SOBRE la tarima (tope a 1,544 m del piso). La otra lectura es 'piso'."
+    },
+    "tarima_alto": {"valor": 0.144, "razon": "Alto de una tarima europea comun."},
+    "tarimas": {
+      "valor": {
+        "Norte": {"centro": [5.35, 3.50], "rot_z": 0},
+        "Oeste": {"centro": [5.25, 2.10], "rot_z": 90},
+        "Sur": {"centro": [6.65, 2.00], "rot_z": 180},
+        "Este": {"centro": [6.75, 3.40], "rot_z": 270}
+      },
+      "razon": "Cruz en molinete: con rot_z 0 el lado de 1,2 m va en X. Una cruz simple con cuatro tarimas de 1,0 x 1,2 m no entra en 2,7 m sin que choquen las esquinas. El molinete mide 1,0 + 1,2 + 0,30 = 2,50 m, deja 0,10 m de margen a la zona y un hueco central de 0,50 m. Con separacion 0,45 m (layout anterior) la caja mas lejana queda a 1,63 m en planta y el CR20A no llega a la camada alta (ver fase2)."
+    },
+    "pedestal_cr20a": {
+      "valor": {"centro": [6.0, 2.75], "lado": 0.40, "alto": 1.00},
+      "razon": "Lado: la base del CR20A mide unos 0,24 m; 0,40 m deja 0,05 m por lado contra las tarimas, igual a la tolerancia. Alto: barrido con el URDF real; con 0,6 m no llega a la camada alta, con 1,0 m llega arriba (con aproximacion de 0,10 m) y abajo, en las dos lecturas de 'estiba_max_desde'."
+    },
+    "pedestal_cr6al": {
+      "valor": {"centro": [2.75, 2.75], "lado": 0.40, "alto": 0.70},
+      "razon": "El CR6AL cubre banda, magazine y bahias con pedestales de 0,3 a 0,9 m. Se elige 0,70 m para pasar holgado por encima de las paredes de las cajas abiertas."
+    },
+    "caja": {
+      "valor": {"largo": 0.40, "ancho": 0.30, "alto": 0.28, "masa_vacia_kg": 0.35},
+      "razon": "Caja corrugada generica. 0,40 x 0,30 permite una camada trabada de 10 cajas que cubre exacto la tarima de 1,2 x 1,0 m. 5 camadas de 0,28 m = 1,40 m."
+    },
+    "caja_plana": {
+      "valor": {"largo": 0.74, "ancho": 0.58, "espesor": 0.006},
+      "razon": "Desarrollo plano de una caja regular de 0,40 x 0,30 x 0,28 m: (largo + ancho + solapa de pegado) x (alto + ancho). Entra en el magazine de 0,80 x 0,60 m."
+    },
+    "estuche": {
+      "valor": {"largo": 0.13, "ancho": 0.095, "alto": 0.065, "masa_kg": 0.11},
+      "razon": "Estuche generico de carton. 0,095 m de ancho entra en un canal de 0,12 m. El largo va en el sentido de la banda."
+    },
+    "receta_encajado": {
+      "valor": {"a_lo_largo": 3, "a_lo_ancho": 3, "capas": 4},
+      "razon": "36 estuches por caja (3 x 3 x 4). Caja llena: 36 x 0,11 + 0,35 = 4,31 kg. Receta generica, igual para las 4 variedades."
+    },
+    "trabado": {
+      "valor": {
+        "camadas": 5,
+        "patron_A": [[-0.40, -0.35, 0], [0.0, -0.35, 0], [0.40, -0.35, 0],
+                     [-0.40, -0.05, 0], [0.0, -0.05, 0], [0.40, -0.05, 0],
+                     [-0.45, 0.30, 90], [-0.15, 0.30, 90], [0.15, 0.30, 90], [0.45, 0.30, 90]],
+        "patron_B": "patron_A girado 180 grados"
+      },
+      "razon": "Centro de cada caja [x, y, giro] en el sistema de la tarima (X = lado de 1,2 m). Dos filas de 3 cajas a lo largo y una fila de 4 a lo ancho: 10 cajas en 1,2 x 1,0 m. Las camadas pares usan el patron girado 180 grados para que las juntas no coincidan."
+    },
+    "variedades": {
+      "valor": {
+        "A": {"color": [0.85, 0.15, 0.15], "bahia": "B1", "tarima": "Norte"},
+        "B": {"color": [0.15, 0.65, 0.25], "bahia": "B2", "tarima": "Este"},
+        "C": {"color": [0.95, 0.80, 0.10], "bahia": "B3", "tarima": "Oeste"},
+        "D": {"color": [0.15, 0.35, 0.85], "bahia": "B4", "tarima": "Sur"}
+      },
+      "razon": "Cuatro variedades genericas, una por bahia y por tarima. Los colores solo sirven para que la vision de la etapa 5 las distinga."
+    },
+    "banda": {
+      "valor": {"x_inicio": 0.0, "x_fin": 2.30, "y_centro": 2.75, "ancho_canal": 0.12, "divisor": 0.015, "margen_estructura": 0.04, "alto": 0.85, "velocidad_m_s": 0.10},
+      "razon": "La banda existente entra por el oeste y termina frente al CR6AL; aca solo se modela el tramo dentro del piso. 5 canales de 0,12 m mas 4 divisores dan 0,66 m, justo dentro de los 0,67 m del campo de la camara. Alto de trabajo 0,85 m. Velocidad para la etapa 3."
+    },
+    "minibanda": {
+      "valor": {"x_inicio": 3.15, "y_centro": 2.75, "ancho": 0.40, "alto": 0.75},
+      "razon": "Corre al este desde las bahias y su tope queda sobre el borde oeste de la zona de estiba (x = 4,65). El punto de toma es la caja detenida contra el tope: a 1,55 m del CR20A en planta. Alto igual al de las bahias para que la caja pase de una a otra sin escalon."
+    },
+    "bahias": {
+      "valor": {"largo": 0.46, "ancho": 0.36, "alto": 0.75,
+                "centros": {"B1": [3.40, 3.15], "B2": [3.90, 3.15], "B3": [3.40, 2.35], "B4": [3.90, 2.35]}},
+      "razon": "Dos bahias a cada lado de la cabeza de la mini-banda, separadas 0,02 m de ella: la caja llena sale de costado (empujador o rodillos) hacia la mini-banda. Tamano: caja de 0,40 x 0,30 m mas guias. El ejercicio no dice como salen; es pregunta para el cliente."
+    },
+    "magazine": {
+      "valor": {"centro": [2.75, 1.75], "largo": 0.80, "ancho": 0.60, "alto": 1.00, "capacidad_cartones": 40},
+      "razon": "Al sur del CR6AL, a 1,0 m, fuera del paso sur. Se supone que tiene elevador y la caja plana de arriba siempre queda a 1,0 m de alto. Capacidad para la falla de 'falta de carton' de la etapa 6."
+    },
+    "camara": {
+      "valor": {"campo_centro": [1.97, 2.75], "sensor_mm": [6.71, 5.61], "resolucion_px": [2448, 2048], "cuerpo_alto": 0.10, "portico_separacion": 0.90},
+      "razon": "Campo de 0,67 m a traves de los canales y 0,56 m a lo largo, terminando 0,05 m antes del final de la banda. Sensor IMX547 de 2,74 um por pixel (hoja de datos de la camara): con lente de 12 mm a 1,2 m da 0,67 x 0,56 m, coherente con el ejercicio. Portico de perfil con dos patas fuera de la banda."
+    },
+    "tablero": {"valor": {"centro": [0.60, 3.95], "tam": [0.80, 0.50, 1.80]}, "razon": "Tablero electrico generico, en la esquina noroeste, fuera del paso norte."},
+    "tablet": {"valor": {"centro": [1.40, 3.95], "tam": [0.30, 0.30, 1.20]}, "razon": "Tablet del operador en un pedestal junto al tablero."},
+    "baliza": {"valor": {"centro": [1.80, 4.05], "tam": [0.10, 0.10, 2.00]}, "razon": "Columna de senalizacion de 2 m, visible desde los dos pasos."},
+    "pasos_personal": {
+      "valor": {"Sur": [0.0, 1.20], "Norte": [4.30, 5.50]},
+      "razon": "Franjas [y_min, y_max] de lado a lado del piso, sin equipos. 1,20 m deja pasar a una persona con una transpaleta. Las tarimas Oeste y Sur se cambian desde el paso sur; Norte y Este, desde el norte: en el molinete cada tarima tiene dos lados libres."
+    },
+    "herramientas": {
+      "valor": {"cr20a": {"largo": 0.15, "masa_kg": 2.5, "doble_masa_kg": 3.5}, "cr6al": {"largo": 0.12, "masa_kg": 1.0}},
+      "razon": "Largo desde la brida hasta la cara de la ventosa. Con herramienta doble el CR20A carga 2 x 4,31 + 3,5 = 12,1 kg, bajo sus 20 kg."
+    },
+    "aproximacion_z": {"valor": 0.10, "razon": "Altura sobre el punto final desde la que la herramienta baja en vertical."},
+    "robots_masa_kg": {
+      "valor": {"cr20a": 73.0, "cr6al": 41.5},
+      "razon": "Los URDF de Dobot traen masas de prueba (0,027 kg y 0,007 kg en total): con eso PhysX se vuelve inestable. Se reparten las masas de catalogo entre los links (ver robots_reparto_masa). Solo para que la simulacion sea estable; no sirve para estudiar dinamica."
+    },
+    "robots_reparto_masa": {"valor": [0.20, 0.15, 0.25, 0.20, 0.07, 0.07, 0.06], "razon": "Fraccion de la masa total para base_link, Link1 ... Link6. Estimacion visual."},
+    "robots_radio_giro": {"valor": 0.10, "razon": "Inercia simplificada de cada link: I = m * r^2 en los tres ejes. Reemplaza las inercias del URDF, que no corresponden a las masas."},
+    "robots_esfuerzo_nm": {
+      "valor": {"cr20a": [1500, 1500, 700, 150, 150, 150], "cr6al": [500, 500, 250, 60, 60, 60]},
+      "razon": "Los URDF traen limites de 100 y 300 N.m, que no sostienen el brazo estirado con la masa real. Estos valores dejan al control de posicion sostenerlo; no son datos del fabricante."
+    },
+    "robots_drive": {"valor": {"rigidez": 10000.0, "amortiguacion": 1000.0}, "razon": "Ganancias de la articulacion para control de posicion en la simulacion. Se ajustan en la etapa 4."},
+    "vision_umbral_confianza": {"valor": 0.80, "razon": "Debajo de este valor el estuche queda como 'duda' (etapa 5)."}
+  }
 }

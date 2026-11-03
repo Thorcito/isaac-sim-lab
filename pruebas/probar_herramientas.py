@@ -77,6 +77,31 @@ probar("escena", escena, ventana_ok)
 # 11b. medir: la escena entera y una ruta inexistente
 probar("medir", lambda: medir("/World", "/NoExiste"), ventana_ok)
 
+# 11c. medidas: devuelve numeros; una ruta inexistente da None
+def _medidas():
+    m = medidas("/World", "/NoExiste")
+    if m.get("/NoExiste") is not None:
+        raise RuntimeError("una ruta inexistente deberia dar None")
+    w = m.get("/World")
+    return "(escena vacia)" if w is None else f"(/World mide {w['tam'][0]:.2f} x {w['tam'][1]:.2f} m)"
+probar("medidas", _medidas)
+
+# 11d. leer_celda: datos y supuestos de fase1/celda.json
+def _leer_celda():
+    D, S, ruta = leer_celda()
+    if D["piso"] != [7.7, 5.5] or "tarimas" not in S:
+        raise RuntimeError(f"contenido inesperado en {ruta}")
+    return f"({len(S)} supuestos, desde {ruta})"
+probar("leer_celda", _leer_celda)
+
+# 11e. dibujos: circulo y puntos, y despues se borran
+def _dibujos():
+    dibujar_circulo((0.0, 0.0, 0.01), 1.0)
+    dibujar_puntos([(0.0, 0.0, 0.5), (1.0, 0.0, 0.5)])
+    limpiar_dibujos()
+    return "(circulo y puntos dibujados y borrados)"
+probar("dibujar_circulo / dibujar_puntos / limpiar_dibujos", _dibujos)
+
 # 12. codigo_ejemplo (abre 0 archivos para no llenar la pantalla)
 def _codigo():
     w = codigo_ejemplo("Hello World", abrir=0)
