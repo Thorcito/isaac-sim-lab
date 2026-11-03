@@ -57,8 +57,8 @@
       "razon": "El CR6AL cubre banda, magazine y bahias con pedestales de 0,3 a 0,9 m. Se elige 0,70 m para pasar holgado por encima de las paredes de las cajas abiertas."
     },
     "caja": {
-      "valor": {"largo": 0.40, "ancho": 0.30, "alto": 0.28, "masa_vacia_kg": 0.35},
-      "razon": "Caja corrugada generica. 0,40 x 0,30 permite una camada trabada de 10 cajas que cubre exacto la tarima de 1,2 x 1,0 m. 5 camadas de 0,28 m = 1,40 m."
+      "valor": {"largo": 0.40, "ancho": 0.30, "alto": 0.28, "masa_vacia_kg": 0.35, "espesor_pared": 0.003},
+      "razon": "Caja corrugada generica. 0,40 x 0,30 permite una camada trabada de 10 cajas que cubre exacto la tarima de 1,2 x 1,0 m. 5 camadas de 0,28 m = 1,40 m. Medidas exteriores; carton corrugado de onda B, unos 3 mm de pared."
     },
     "caja_plana": {
       "valor": {"largo": 0.74, "ancho": 0.58, "espesor": 0.006},
@@ -73,14 +73,8 @@
       "razon": "36 estuches por caja (3 x 3 x 4). Caja llena: 36 x 0,11 + 0,35 = 4,31 kg. Receta generica, igual para las 4 variedades."
     },
     "trabado": {
-      "valor": {
-        "camadas": 5,
-        "patron_A": [[-0.40, -0.35, 0], [0.0, -0.35, 0], [0.40, -0.35, 0],
-                     [-0.40, -0.05, 0], [0.0, -0.05, 0], [0.40, -0.05, 0],
-                     [-0.45, 0.30, 90], [-0.15, 0.30, 90], [0.15, 0.30, 90], [0.45, 0.30, 90]],
-        "patron_B": "patron_A girado 180 grados"
-      },
-      "razon": "Centro de cada caja [x, y, giro] en el sistema de la tarima (X = lado de 1,2 m). Dos filas de 3 cajas a lo largo y una fila de 4 a lo ancho: 10 cajas en 1,2 x 1,0 m. Las camadas pares usan el patron girado 180 grados para que las juntas no coincidan."
+      "valor": {"voladizo_max": 0.02, "frac_apoyo_puente": 0.10},
+      "razon": "El patron de cada camada lo calcula celda/recetas.py (trabado): prueba patrones de bloques y elige la pareja impar/par que mas traba. voladizo_max: cuanto puede salir una caja del borde de la tarima (2 cm es practica comun para que el film y el transporte no aplasten los bordes). frac_apoyo_puente: una caja de arriba 'puentea' si apoya al menos 10 % de su area en cada una de dos cajas de abajo. La cantidad de camadas sale de estiba_max y estiba_max_desde."
     },
     "variedades": {
       "valor": {
@@ -135,6 +129,59 @@
       "razon": "Los URDF traen limites de 100 y 300 N.m, que no sostienen el brazo estirado con la masa real. Estos valores dejan al control de posicion sostenerlo; no son datos del fabricante."
     },
     "robots_drive": {"valor": {"rigidez": 10000.0, "amortiguacion": 1000.0}, "razon": "Ganancias de la articulacion para control de posicion en la simulacion. Se ajustan en la etapa 4."},
-    "vision_umbral_confianza": {"valor": 0.80, "razon": "Debajo de este valor el estuche queda como 'duda' (etapa 5)."}
+    "vision_umbral_confianza": {"valor": 0.80, "razon": "Debajo de este valor el estuche queda como 'duda' (etapa 5)."},
+    "vision": {
+      "valor": {"sat_min": 0.35, "val_min": 0.20, "tol_tono_grados": 18, "tol_estricta_grados": 10,
+                "area_completa": 0.80, "area_minima": 0.25, "etiqueta": [0.45, 0.35], "suavizado_px": 1, "z_objetivo": "arriba_estuche"},
+      "razon": "Clasificacion por color en HSV. Un pixel es 'de estuche' si su saturacion y su brillo pasan sat_min y val_min (la banda gris y la etiqueta blanca no pasan). Se asigna a la variedad cuyo tono queda a menos de tol_tono_grados; si ninguna, es 'desconocida'. Confianza = fraccion de pixeles a menos de tol_estricta_grados del tono de la variedad, por la fraccion de area visible (area_completa = fraccion del estuche que se espera ver de color: el resto es la etiqueta blanca y el borde). Confianza = 1 si el tono MEDIO de la mancha queda a menos de tol_estricta_grados de la variedad, baja hasta 0 en tol_tono_grados; por la fraccion de area visible. Manchas de menos de area_minima del estuche se descartan (ruido). etiqueta: tamano relativo de la etiqueta blanca impresa en la cara de arriba (solo para las imagenes sinteticas). suavizado_px: antes de clasificar, cada pixel se promedia con sus vecinos en un cuadrado de 3 x 3 (radio 1) para bajar el ruido del sensor. z_objetivo: la conversion de pixel a metros usa el plano de la cara de arriba del estuche."
+    },
+
+    "robots_movimiento": {
+      "valor": {
+        "cr20a": {"vel_joint_grados_s": [120, 120, 150, 180, 180, 180], "acel_joint_grados_s2": [300, 300, 375, 600, 600, 600],
+                  "vel_tcp_max_m_s": 2.0, "acel_tcp_m_s2": 4.0},
+        "cr6al": {"vel_joint_grados_s": [120, 120, 150, 180, 180, 180], "acel_joint_grados_s2": [300, 300, 375, 600, 600, 600],
+                  "vel_tcp_max_m_s": 2.0, "acel_tcp_m_s2": 4.0},
+        "factor_velocidad": 1.0
+      },
+      "razon": "Velocidad maxima por joint del CR20A: pagina oficial de Dobot (dobot-robots.com, CR20A: J1-J2 120, J3 150, J4-J6 180 grados/s) y la tabla de la serie CRA. Del CR6AL no hay hoja de datos publica: se toman los mismos valores de la serie CRA de largo alcance (estimacion, confirmar con Dobot). Dobot no publica aceleraciones: se supone que cada joint llega a su velocidad maxima en 0,4 s (J1-J3) y 0,3 s (J4-J6). TCP: 2 m/s es dato del CR20A; para el CR6AL se supone igual. factor_velocidad 1,0 = velocidad de catalogo, el caso mas optimista; en planta suele programarse por debajo."
+    },
+    "movimiento_lineal": {
+      "valor": {"vel_m_s": 0.5, "acel_m_s2": 3.0, "asentamiento_s": 0.05},
+      "razon": "Bajada y subida vertical de la herramienta (aproximacion): se programa mas lenta que el traslado para no golpear la pieza. asentamiento_s: pausa al final de cada movimiento hasta que el controlador da la posicion por alcanzada."
+    },
+    "vacio": {
+      "valor": {"toma_s": 0.15, "soltura_s": 0.10},
+      "razon": "Eyector de vacio con vacuostato: tiempo hasta que el vacuostato confirma la toma, y hasta que el soplo suelta la pieza. Valores tipicos de catalogo para copas chicas y ventosas de area; confirmar con el proveedor."
+    },
+    "armado_caja": {
+      "valor": {"abrir_s": 4.0},
+      "razon": "Abrir la caja plana con vacio contra las guias de la bahia y plegar las solapas del fondo. El ejercicio no da el tiempo; en la simulacion la caja 'aparece' armada y se cuenta este tiempo."
+    },
+    "rechazo": {
+      "valor": {"centro": [2.05, 1.90], "largo": 0.40, "ancho": 0.30, "alto": 0.60},
+      "razon": "Cajon para estuches desviados (duda o variedad fuera de receta), al sur del final de la banda, entre la pata sur del portico y el magazine. No esta en la escena de la etapa 1: se agrega en la etapa 4 si se elige la politica 'desviar'."
+    },
+    "transferencia": {
+      "valor": {"salida_bahia_s": 3.0, "minibanda_vel_m_s": 0.30, "minibanda_capacidad_cajas": 3},
+      "razon": "Salida lateral de la caja llena (empujador) hacia la mini-banda y avance hasta el tope. Capacidad: 1,5 m de mini-banda / 0,40 m de caja = 3 cajas en fila (contando la del tope)."
+    },
+    "acumulacion_canal": {
+      "valor": {"capacidad_estuches": 8, "visibles": 4},
+      "razon": "Estuches que pueden esperar en fila contra el tope de cada canal antes de que la banda los empuje fuera (8 x 0,13 m = 1,04 m). visibles: los que caen dentro del campo de 0,56 m de la camara (0,56 / 0,13 = 4); el CR6AL solo toma de esos."
+    },
+    "operador": {
+      "valor": {"reponer_carton_s": 300, "cambiar_tarima_s": 180, "despejar_parada_s": 30},
+      "razon": "Tiempo de reaccion y trabajo del operador: desde que la baliza avisa hasta que repone el magazine, cambia una tarima llena o despeja una parada. Estimacion para el modelo de ritmo."
+    },
+    "politica_fallas": {
+      "valor": {"duda": "desviar", "desconocida": "desviar", "sin_carton": "seguir", "aviso_carton_bajo": 5,
+                "rechazos_seguidos_para_detener": 5, "cr6al_toma_por_ciclo": 1},
+      "razon": "El ejercicio no dice que hacer ante una duda de la camara o una variedad fuera de receta. Opciones: 'desviar' (el CR6AL la deja en el cajon de rechazo; cuesta un ciclo del robot), 'dejar_pasar' (una compuerta al final del canal la deja seguir; no usa el robot pero hay que agregar la compuerta) o 'detener' (para la banda, baliza roja, el operador la saca). Recomendacion: desviar, y detener solo si hay muchos rechazos seguidos (algo anda mal: luz, camara o receta equivocada). sin_carton 'seguir': las otras variedades siguen; 'detener' para toda la celda. aviso_carton_bajo: con cuantos cartones la baliza avisa para reponer. cr6al_toma_por_ciclo: cuantos estuches toma el CR6AL antes de ir a las cajas (1 = una copa; 3 = tres copas con vacio independiente, que toman de a uno y sueltan de a uno)."
+    },
+    "ritmo": {
+      "valor": {"variacion_llegadas": 0.5, "calentamiento_s": 600, "duracion_s": 3600, "semillas": 5},
+      "razon": "Llegadas: el intervalo entre estuches varia al azar +/- 50 % alrededor del medio (la banda viene de una linea con su propia variacion). El modelo simula 10 min de arranque que no se cuentan, despues 1 h, y repite con 5 semillas."
+    }
   }
 }

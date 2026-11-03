@@ -242,6 +242,19 @@ def leer_celda(nombre="fase1/celda.json"):
     return D, S, ruta
 
 
+def usar_celda():
+    """Deja listo para importar el paquete celda/ del repo (logica sin Isaac) y lo recarga.
+
+    Despues de actualizar() Python seguiria usando la version vieja que ya importo: por eso se
+    borran de memoria los modulos celda.* antes de volver a importarlos. Ej:
+        usar_celda(); from celda import recetas
+    """
+    if REPO_DIR not in sys.path:
+        sys.path.insert(0, REPO_DIR)
+    for m in [m for m in sys.modules if m == "celda" or m.startswith("celda.")]:
+        del sys.modules[m]
+
+
 def _debug_draw():
     from isaacsim.util.debug_draw import _debug_draw as dd
     return dd.acquire_debug_draw_interface()
@@ -378,7 +391,7 @@ def escena():
 def ayuda():
     """Lista las herramientas disponibles."""
     fns = [actualizar, correr, mostrar, ver, archivos, guardar, diagnostico, inventario_ejemplos, inspeccionar, prims, escena,
-           medir, medidas, leer_celda, dibujar_circulo, dibujar_puntos, limpiar_dibujos, codigo_ejemplo, ayuda]
+           medir, medidas, leer_celda, usar_celda, dibujar_circulo, dibujar_puntos, limpiar_dibujos, codigo_ejemplo, ayuda]
     out = []
     for f in fns:
         out.append(f"{f.__name__}{inspect.signature(f)}\n    {(f.__doc__ or '').strip()}")

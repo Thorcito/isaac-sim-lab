@@ -1,15 +1,18 @@
-"""Fase 1 · Geometria de la celda calculada desde celda.json (sin Isaac Sim).
+"""Geometria de la celda calculada desde celda.json (sin Isaac Sim).
 
 Que hace:   convierte las medidas de celda.json en una lista de piezas (cajas con
             centro, tamano y color) y en algunos puntos derivados (punto de toma,
             altura de la camara, cajas de cada camada). Es el UNICO lugar donde se
-            hacen esas cuentas: armar_escena.py construye estas piezas,
-            verificar_escena.py las mide y fase2/robots.py usa los mismos puntos.
-Como usar:  no se corre solo; los scripts lo cargan con correr("fase1/piezas.py").
+            hacen esas cuentas: fase1/armar_escena.py construye estas piezas,
+            fase1/verificar_escena.py las mide y fase2/robots.py usa los mismos puntos.
+Como usar:  usar_celda(); from celda.geometria import *     (en la maquina)
+            from celda import geometria                       (en la PC)
 Que esperar: define las funciones piezas, rect_tarima, cajas_camada, punto_toma,
             camara_z y ancho_canales. No abre ventanas.
 
-PROBADO EN LA MAQUINA: no (probado en PC con usd-core)
+Antes se llamaba fase1/piezas.py. El patron de cada camada lo calcula celda/recetas.py.
+
+PROBADO EN LA MAQUINA: no (probado en PC con usd-core y pytest)
 """
 import math
 
@@ -76,16 +79,18 @@ def camadas_posibles(D, S):
 def cajas_camada(D, S, nombre, camada):
     """Cajas de una camada (1 = la de abajo) en una tarima: lista de dicts con centro (x, y),
     z_arriba, giro (grados, en el mundo) y medio largo/ancho en planta."""
-    t, c, tr = S["tarimas"][nombre], S["caja"], S["trabado"]
-    giro_patron = 0 if camada % 2 == 1 else 180   # camadas pares: patron girado 180 grados
-    a = math.radians(t["rot_z"] + giro_patron)
+    from celda import recetas   # aca adentro: recetas tambien importa este modulo
+
+    t, c = S["tarimas"][nombre], S["caja"]
+    patron = recetas.trabado(D, S)["impar" if camada % 2 == 1 else "par"]
+    a = math.radians(t["rot_z"])
     cx, cy = t["centro"]
     z = S["tarima_alto"] + camada * c["alto"]
     out = []
-    for px, py, g in tr["patron_A"]:
+    for px, py, g in patron:
         x = cx + px * math.cos(a) - py * math.sin(a)
         y = cy + px * math.sin(a) + py * math.cos(a)
-        giro = (t["rot_z"] + giro_patron + g) % 360
+        giro = (t["rot_z"] + g) % 360
         hx, hy = _girado(c["largo"] / 2, c["ancho"] / 2, giro)
         out.append({"centro": (x, y), "z_arriba": z, "giro": giro, "medio": (hx, hy)})
     return out

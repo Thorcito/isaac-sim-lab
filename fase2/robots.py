@@ -32,6 +32,10 @@ import xml.etree.ElementTree as ET
 import isaacsim.core.experimental.utils.stage as stage_utils
 from pxr import Gf, Usd, UsdGeom, UsdPhysics
 
+usar_celda()
+from celda.geometria import *    # cajas_camada, punto_toma, camadas_posibles...
+from celda.cinematica import *   # leer_cadena, resolver_abajo, margen_radial...
+
 # ---------------- PARAMETROS ----------------
 PARAMS = {
     "carpeta_robots": TRABAJO + "/robots",
@@ -220,8 +224,6 @@ def _objetivos_cr6al(D, S, rx, ry):
 def _robots():
     D, S, ruta_datos = leer_celda()
     M = D["_todo"]["modelos"]
-    correr("fase1/piezas.py")
-    correr("fase2/cinematica.py")
     filas, info = [], []
 
     def control(ok, texto):

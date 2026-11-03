@@ -94,6 +94,17 @@ def _leer_celda():
     return f"({len(S)} supuestos, desde {ruta})"
 probar("leer_celda", _leer_celda)
 
+# 11d2. usar_celda: la logica sin Isaac se importa y calcula el trabado
+def _usar_celda():
+    usar_celda()
+    from celda import recetas
+    D, S, _ = leer_celda()
+    t = recetas.trabado(D, S)
+    if t["cajas"] != 10:
+        raise RuntimeError(f"el trabado dio {t['cajas']} cajas por camada (esperado 10)")
+    return f"({t['descripcion'][:60]}...)"
+probar("usar_celda", _usar_celda)
+
 # 11e. dibujos: circulo y puntos, y despues se borran
 def _dibujos():
     dibujar_circulo((0.0, 0.0, 0.01), 1.0)

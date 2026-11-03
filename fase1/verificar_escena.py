@@ -20,6 +20,9 @@ PROBADO EN LA MAQUINA: no (probado en PC con usd-core, sin el dibujo)
 import math
 import os
 
+usar_celda()
+from celda.geometria import *   # piezas() y las funciones de geometria (logica sin Isaac)
+
 # ---------------- PARAMETROS ----------------
 PARAMS = {
     "raiz": "/World/Celda",
@@ -37,7 +40,6 @@ NO_OCUPAN = ("/Piso", "/Pasos/", "/ZonaEstiba/Linea", "/Alimentacion/PuntoToma",
 
 def _verificar():
     D, S, ruta_datos = leer_celda()
-    correr("fase1/piezas.py")
     R, tol = PARAMS["raiz"], PARAMS["tol"]
     lista = piezas(D, S)
     med = medidas(*[R + p["ruta"] for p in lista])

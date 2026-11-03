@@ -20,6 +20,9 @@ import os
 import isaacsim.core.experimental.utils.stage as stage_utils
 from pxr import Gf, Sdf, UsdGeom, UsdLux
 
+usar_celda()
+from celda.geometria import *   # piezas() y las funciones de geometria (logica sin Isaac)
+
 # ---------------- PARAMETROS ----------------
 PARAMS = {
     "salida": TRABAJO + "/escenas/etapa1/celda.usd",
@@ -32,7 +35,6 @@ PARAMS = {
 
 def _armar():
     D, S, ruta_datos = leer_celda()
-    correr("fase1/piezas.py")   # define piezas() y las funciones de geometria
 
     # 1. Escena nueva en metros y con Z arriba: asi 1 unidad = 1 m y las medidas son las reales
     stage_utils.create_new_stage()

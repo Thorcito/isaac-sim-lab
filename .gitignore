@@ -5,3 +5,7 @@ Thumbs.db
 # datos privados de proyectos: nunca al repo
 privado/
 *.secret.*
+
+# pruebas y descargas en la PC
+.cache/
+.pytest_cache/
